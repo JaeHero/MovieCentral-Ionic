@@ -1,17 +1,20 @@
 import { Component, inject } from '@angular/core';
-import { IonHeader, IonToolbar, IonTitle, IonContent, InfiniteScrollCustomEvent, IonList, IonItem, IonSkeletonText, IonAvatar, IonAlert, IonLabel, IonBadge, IonInfiniteScroll, IonInfiniteScrollContent } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, InfiniteScrollCustomEvent, IonList, IonItem, IonSkeletonText, IonAvatar, IonAlert, IonLabel, IonBadge, IonInfiniteScroll, IonInfiniteScrollContent, IonIcon, IonSearchbar } from '@ionic/angular/standalone';
 import { MovieService } from '../services/movie.service';
 import { catchError, finalize } from 'rxjs';
 import { MovieResult } from '../services/interfaces';
 import { DatePipe } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { searchCircleOutline } from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+import { IonInput } from '@ionic/angular/standalone';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: 'home.page.html',
-  styleUrls: ['home.page.scss'],
+  selector: 'app-home-defer',
+  templateUrl: 'home-defer.page.html',
+  styleUrls: ['home-defer.page.scss'],
   standalone: true,
-  imports: [IonInfiniteScrollContent, IonInfiniteScroll, IonBadge, 
+  imports: [IonInput,IonSearchbar, IonIcon, IonInfiniteScrollContent, IonInfiniteScroll, IonBadge, 
     IonLabel, 
     IonAlert, 
     IonAvatar, 
@@ -27,7 +30,7 @@ import { RouterModule } from '@angular/router';
     RouterModule,
   ],
 })
-export class HomePage {
+export class HomeDeferPage {
   public movieService = inject(MovieService);
   public currentPage = 1;
   public error = null;
@@ -38,6 +41,7 @@ export class HomePage {
 
   
   constructor() {
+    addIcons({searchCircleOutline});
     this.loadMovies();
   }
 
@@ -76,5 +80,24 @@ export class HomePage {
   loadMore(event: InfiniteScrollCustomEvent) {
     this.currentPage++;
     this.loadMovies(event);
+  }
+
+  onSearch(event: any) {
+    const query = event.target.value;
+    if (query && query.trim() !== '') {
+      this.movieService.searchMovies(query).pipe(
+        catchError((err: any) => {
+          console.log(err);
+          this.error = err.error.status_message;
+          return [];
+        })
+      ).subscribe((data: any) => {
+        this.movies = data.results;
+      });
+    } else {
+      this.currentPage = 1;
+      this.movies = [];
+      this.loadMovies();
+    }
   }
 }
